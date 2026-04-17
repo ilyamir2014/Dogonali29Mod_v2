@@ -1,6 +1,7 @@
 plugins {
-    id 'fabric-loom' version '1.7.4'
-    id 'maven-publish'
+//    id 'fabric-loom' version '1.7.4'
+//    id 'maven-publish'
+    id("io.github.smootheez.mc-mod-publisher") version "1.0.0"
 }
 
 version = project.mod_version
@@ -49,6 +50,3 @@ jar {
     }
 }
 
-plugins {
-  id("io.github.smootheez.mc-mod-publisher") version "1.0.0"
-}
