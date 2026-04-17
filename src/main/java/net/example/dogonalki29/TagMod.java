@@ -1,4 +1,4 @@
-package net.example.tagmod;
+package net.example.dogonalki29;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
