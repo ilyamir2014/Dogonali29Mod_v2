@@ -7,9 +7,9 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
-base {
-    archivesName = net.example.dogonalki29
-}
+//base {
+//    archivesName = net.example.dogonalki29
+//}
 
 repositories {
     // Репозитории для зависимостей, если понадобятся (например, для библиотек меню)
