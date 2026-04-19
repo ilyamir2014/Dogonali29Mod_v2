@@ -1,56 +1,67 @@
 package net.example.dogonalki29;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-
+import net.minecraft.world.item.Items;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.CommandSourceStack;
 import java.util.UUID;
 
-public class TagMod implements ModInitializer {
+@Mod(TagMod.MOD_ID)
+public class TagMod {
+    public static final String MOD_ID = "tagmod";
     // Храним UUID текущего водящего
     public static UUID taggerUUID = null;
 
-    @Override
-    public void onInitialize() {
-        // Регистрация события удара
-        AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (!world.isClient && entity instanceof ServerPlayerEntity target) {
-                ServerPlayerEntity attacker = (ServerPlayerEntity) player;
-
-                // Проверяем: атакующий — водящий, и у него в руке палка
-                if (attacker.getUuid().equals(taggerUUID) && attacker.getStackInHand(hand).isOf(Items.STICK)) {
-                    transferTag(attacker, target);
-                    return ActionResult.SUCCESS;
-                }
-            }
-            return ActionResult.PASS;
-        });
+    public TagMod() {
+        // Регистрируем наш класс в шине событий Forge
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
-    private void transferTag(ServerPlayerEntity oldTagger, ServerPlayerEntity newTagger) {
-        // 1. Меняем роли
-        taggerUUID = newTagger.getUuid();
+    @SubscribeEvent
+    public void onPlayerAttack(AttackEntityEvent event) {
+        // Работаем только на сервере и только если цель — игрок
+        if (!event.getEntity().level().isClientSide && event.getTarget() instanceof ServerPlayer target) {
+            ServerPlayer attacker = (ServerPlayer) event.getEntity();
 
-        // 2. Убираем подсветку у старого и забираем палку
-        oldTagger.setGlowing(false);
-        oldTagger.getInventory().remove(stack -> stack.isOf(Items.STICK), 1, oldTagger.getInventory());
+            // Проверка: атакующий — водящий и бьет палкой
+            if (attacker.getUUID().equals(taggerUUID) && attacker.getMainHandItem().is(Items.STICK)) {
+                transferTag(attacker, target);
+                // Отменяем стандартный урон, чтобы не убить игрока палкой
+                event.setCanceled(true);
+            }
+        }
+    }
 
-        // 3. Даем палку новому водящему и включаем подсветку
-        newTagger.getInventory().insertStack(Items.STICK.getDefaultStack());
-        newTagger.setGlowing(true);
+    private void transferTag(ServerPlayer oldTagger, ServerPlayer newTagger) {
+        taggerUUID = newTagger.getUUID();
 
-        // 4. Замораживаем нового водящего на 10 секунд (200 тиков)
-        // Используем Слабость и Медлительность максимального уровня, чтобы нельзя было бить и ходить
-        newTagger.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 200, 255, false, false));
-        newTagger.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, 200, 255, false, false));
+        // 1. Настройки старого водящего
+        oldTagger.setGlowingTag(false);
+        // Забираем одну палку
+        oldTagger.getInventory().clearOrCountMatchingItems(stack -> stack.is(Items.STICK), 1, oldTagger.inventoryMenu.getCraftSlots());
 
-        // 5. Оповещения
-        oldTagger.sendMessage(Text.of("Вы передали роль водящего!"), true);
-        newTagger.sendMessage(Text.of("Теперь вы водите! Вы заморожены на 10 секунд."), true);
+        // 2. Настройки нового водящего
+        newTagger.setGlowingTag(true);
+        newTagger.addItem(Items.STICK.getDefaultInstance());
+
+        // 3. Заморозка на 10 секунд (200 тиков)
+        // В Forge/NeoForge уровни эффектов начинаются с 0 (255 — это очень сильно)
+        newTagger.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 255, false, false));
+        newTagger.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 200, 255, false, false));
+
+        // 4. Уведомления
+        oldTagger.sendSystemMessage(Component.literal("§aВы передали роль водящего!"));
+        newTagger.sendSystemMessage(Component.literal("§cТеперь вы водите! Заморозка на 10 секунд."));
     }
 }

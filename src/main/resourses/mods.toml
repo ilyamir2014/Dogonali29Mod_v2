@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[51,)"
+license="MIT"
+
+[[mods]]
+modId="tagmod"
+version="1.0.0"
+displayName="Tag Mini-Game"
+authors="Твое Имя"
+description="Добавляет игру в догонялки на сервер."
+
+[[dependencies.tagmod]]
+modId="forge"
+mandatory=true
+versionRange="[51,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.tagmod]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.21.1]"
+ordering="NONE"
+side="BOTH"
