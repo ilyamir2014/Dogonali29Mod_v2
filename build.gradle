@@ -3,7 +3,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     // Это самый важный плагин, который добавляет метод minecraft()
-    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
+    id 'net.minecraftforge.gradle' version '6.0.25'
 }
 
 version = '1.0.0'
