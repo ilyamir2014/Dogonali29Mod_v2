@@ -17,6 +17,8 @@ jobs:
       # Шаг 1: Устанавливаем Gradle в систему, чтобы создать локальный wrapper
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.10 # Явно фиксируем версию здесь
 
       # Шаг 2: Генерируем файлы gradlew, если их нет в репозитории
       - name: Generate Gradle Wrapper
