@@ -1,4 +1,4 @@
-name: Build Mod
+name: Build Minecraft Mod
 on: [push, pull_request]
 
 jobs:
@@ -13,28 +13,29 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+          # Кэширование ускорит последующие сборки
+          cache: 'gradle'
 
-      # Шаг 1: Устанавливаем Gradle в систему, чтобы создать локальный wrapper
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.10 # Явно фиксируем версию здесь
+          # ПРИНУДИТЕЛЬНО устанавливаем версию 8.10, 
+          # чтобы избежать ошибки "Gradle 9.0 not supported"
+          gradle-version: 8.10
 
-      # Шаг 2: Генерируем файлы gradlew, если их нет в репозитории
-      - name: Generate Gradle Wrapper
-        run: gradle wrapper --gradle-version 8.10
-
-      # Шаг 3: Даем права на исполнение созданному файлу
-      - name: Make gradlew executable
+      - name: Make Gradle executable
         run: chmod +x gradlew
 
-      # Шаг 4: Сама сборка мода
       - name: Build with Gradle
-        run: ./gradlew build
+        # Используем --no-daemon для стабильности на серверах GitHub
+        run: ./gradlew build --no-daemon
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mod-Jar
+          name: Minecraft-Mod-Jar
           path: build/libs/*.jar
           if-no-files-found: error
